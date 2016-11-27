@@ -6,7 +6,7 @@
 
 // AB HIER ÄNDERN
 #define NODEID 0x01  		// ganze ID besteht aus HW + NODEID 
-#define HW BASIS
+#define HW POWER_HUB
 
 // uncomment if not needed
 // #define RITTAL_LEISTEN

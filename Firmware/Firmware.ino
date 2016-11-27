@@ -16,6 +16,10 @@
 	#include "globals.h"        // Globale Variablen.
 #undef ino_file 
 
+#if HW == POWER_HUB
+ 	#include "power_hub.h"
+#endif
+
 #include <SPI.h>              // Arduino Lib
 #include <Timer.h>            // http://playground.arduino.cc/Code/Timer
 
@@ -44,7 +48,7 @@ Timer t;
 #endif
 
 
-void setup() {
+void setup(){
 	int i;
 	// start serial port
 	Serial.begin(9600);
@@ -74,6 +78,8 @@ void setup() {
 			pinMode(fuse[i], INPUT);
 			fuseStatus[i] = FUSE_STATUS_UNDEF;
 		}
+		power_hub_init();
+		t.every(10, power_hub_task);
 	#endif
   
 	#ifdef RITTAL_LEISTEN
@@ -98,8 +104,6 @@ void setup() {
 		}
 		lcdHelloWorld();
 	#endif
-
-  
 }
 
 void loop() {
@@ -124,6 +128,7 @@ void readVoltages(){
 }
 
 #if HW == POWER_HUB
+	int i;
 	void readFuses(){
 		for(i=0;i<8;i++){
 			if(digitalRead(fuse[i])==1){	
