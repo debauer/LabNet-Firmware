@@ -50,19 +50,17 @@ void setup() {
 		Serial.println("Booting LabNet Node");
 		Serial.print("HW: ");
 		Serial.println(HW);
-		Serial.print("NODE: ");
-		Serial.println(NODE);
 		Serial.print("NODEID: ");
 		Serial.println(NODEID);
 	#endif
   
-	#if RITTAL_LEISTEN
+	#ifdef RITTAL_LEISTEN
 		Rittal0.init();
 		t.every(10, rittalTask);
 		t.every(5000, rittalTest);
 	#endif
 
-	#if CAN_BUS
+	#ifdef CAN_BUS
 		// init can bus, baudrate: 125k
 		can0.begin(MCP_STDEXT,CAN_125KBPS, MCP_16MHZ);
 		can0.setMode(MCP_NORMAL);
@@ -70,7 +68,7 @@ void setup() {
 		t.every(5000, sendValues5000);
 	#endif
 
-	#if ADDON_LCD_LED
+	#ifdef ADDON_LCD_LED
 		Serial.print("Addon LCD LED V1.0");
 		statusLeds.begin();
 		for(i=0;i<16;i++){
@@ -91,7 +89,7 @@ void readVoltages(){
 	voltage24 = analogRead(V24) * (5.0 / 1023.0/1.5*11.5);
 }
 
-#if CAN_BUS
+#ifdef CAN_BUS
 	unsigned char stmp[8] = {0, 1, 2, 3, 4, 5, 6, 7};
 
 	void sendValues1000(){
@@ -106,7 +104,7 @@ void readVoltages(){
 #endif
 
 
-#if ADDON_LCD_LED
+#ifdef ADDON_LCD_LED
 	 void lcdHelloWorld(){
 		tft.setCursor(0, 0);
 		tft.println("Hello World!"); 
@@ -122,7 +120,7 @@ void readVoltages(){
 	}
 #endif
 
-#if RITTAL_LEISTEN
+#ifdef RITTAL_LEISTEN
   void rittalTest(){
 	static uint8_t s =0;
 	if(s){

@@ -8,7 +8,7 @@
 #define HW BASIS
 
 // uncomment if not needed
-#define RITTAL_LEISTEN
+// #define RITTAL_LEISTEN
 #define CAN_BUS
 #define ONEWIRE
 #define SERIAL_OUTPUT 		// konflikte mit HR20 ??

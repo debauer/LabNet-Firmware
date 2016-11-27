@@ -1,8 +1,8 @@
 
 #ifdef ino_file
-	EXTERN 
+	#define EXTERN 
 #else
-	EXTERN extern
+	#define EXTERN extern
 #endif
 
 EXTERN float temperatur = 0;
