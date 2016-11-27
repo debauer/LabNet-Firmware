@@ -2,6 +2,7 @@
 // Nichts ändern!
 #define POWER_HUB 1
 #define BASIS 2
+#define MCP23S17_STATUS_ADR 0
 
 // AB HIER ÄNDERN
 #define NODEID 0x01  		// ganze ID besteht aus HW + NODEID 
