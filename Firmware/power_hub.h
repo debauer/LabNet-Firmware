@@ -15,7 +15,7 @@ extern "C" {
 void power_hub_init();
 void power_hub_task();
 
-#endif
+#endif // POWER_HUB_H_ 
 
 #ifdef __cplusplus
 }

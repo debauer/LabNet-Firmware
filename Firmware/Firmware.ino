@@ -66,18 +66,6 @@ void setup(){
 	SerPrintLn("Maintainer: David Bauer");
 
 	#if HW == POWER_HUB
-		fuse[0] = FUSE0;
-		fuse[1] = FUSE1;
-		fuse[2] = FUSE2;
-		fuse[3] = FUSE3;
-		fuse[4] = FUSE4;
-		fuse[5] = FUSE5;
-		fuse[6] = FUSE6;
-		fuse[7] = FUSE7;
-		for(i=0;i<8;i++){
-			pinMode(fuse[i], INPUT);
-			fuseStatus[i] = FUSE_STATUS_UNDEF;
-		}
 		power_hub_init();
 		t.every(10, power_hub_task);
 	#endif
@@ -113,32 +101,15 @@ void loop() {
 
 void SerPrintLn(const char str[]){
 	#ifdef SERIAL_OUTPUT
-		Serial.println("Addon LCD LED V1.0");
+		Serial.println(str);
 	#endif
 }
 
 void SerPrint(const char str[]){
 	#ifdef SERIAL_OUTPUT
-		Serial.print("Addon LCD LED V1.0");
+		Serial.print(str);
 	#endif
 }
-
-void readVoltages(){
-	voltage24 = analogRead(V24) * (5.0 / 1023.0/1.5*11.5);
-}
-
-#if HW == POWER_HUB
-	int i;
-	void readFuses(){
-		for(i=0;i<8;i++){
-			if(digitalRead(fuse[i])==1){	
-				fuseStatus[i] = FUSE_STATUS_OK;
-			}else{
-				fuseStatus[i] = FUSE_STATUS_KAPUTT;
-			}
-		}
-	}
-#endif
 
 #ifdef CAN_BUS
 	unsigned char stmp[8] = {0, 1, 2, 3, 4, 5, 6, 7};
