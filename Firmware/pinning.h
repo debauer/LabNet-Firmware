@@ -8,7 +8,11 @@
 #define FUSE7 2
 
 #define V24 A3
-#define W1 7 
+#if HW == POWER_HUB
+	#define W1 9
+#else
+	#define W1 7
+#endif 
 
 #define CAN_CS 10
 #define EXPANDER_CS 9

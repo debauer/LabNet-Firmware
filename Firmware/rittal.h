@@ -10,13 +10,13 @@
 extern "C" {
 #endif
 
-#ifndef POWER_HUB_H_   /* Include guard */
-#define POWER_HUB_H_
+#ifndef RITTAL_H_   /* Include guard */
+#define RITTAL_H_
 
-void power_hub_init();
-void power_hub_task();
+void rittal_init();
+void rittal_task();
 
-#endif // POWER_HUB_H_ 
+#endif // RITTAL_H_ 
 
 #ifdef __cplusplus
 }

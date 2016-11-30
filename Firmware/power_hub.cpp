@@ -9,6 +9,7 @@ void power_hub_task(){
 }
 
 void power_hub_init(){
+	int i;
 	fuse[0] = FUSE0;
 	fuse[1] = FUSE1;
 	fuse[2] = FUSE2;
