@@ -81,18 +81,25 @@ void setup(){
 		SerPrintLn("init CAN Bus, baudrate: 125k");
 		can0.begin(MCP_STDEXT,CAN_125KBPS, MCP_16MHZ);
 		can0.setMode(MCP_NORMAL);
-		t.every(1000, sendValues1000);
-		t.every(5000, sendValues5000);
+		t.every(1000, can1000);
+		t.every(5000, can5000);
+		can0.sendMsgBuf(buildAdr(TT_REGISTER,LE_STARTUP), 1, 8, "Im here!");
 	#endif
 
 	#ifdef ADDON_LCD_LED
-		SerPrintLn("Addon LCD LED V1.0");
+		tft.begin();
 		statusLeds.begin();
+		delay(100);
+		
+		SerPrintLn("Addon LCD LED V1.0");
+		delay(100);
 		for(i=0;i<16;i++){
 			statusLeds.pinMode(i,OUTPUT);
 		}
-		lcdHelloWorld();
+		t.every(1000, lcdHelloWorld);
+		t.every(500, statusLedsTest);
 	#endif
+	
 }
 
 void loop() {
@@ -114,25 +121,28 @@ void SerPrint(const char str[]){
 #ifdef CAN_BUS
 	unsigned char stmp[8] = {0, 1, 2, 3, 4, 5, 6, 7};
 
-	uint32_t buildAdr(uint8_t a, uint32_t b, uint32_t c){
-		return 0x00000000 | ((uint32_t)(a & 0x1F)) << 24 | ((uint32_t)(b & 0x0FFF)) << 12 | ((uint32_t)(c & 0x0FFF));
+	// CT ID, Register/Sensor
+	uint32_t buildAdr(uint8_t a, uint32_t c){
+		return 0x00000000 | ((uint32_t)(a & 0x1F)) << 24 | ((uint32_t)(NODEID & 0x0FFF)) << 12 | ((uint32_t)(c & 0x0FFF));
 	}
 
-	void sendValues1000(){
+	void can1000(){ // sendet alle 1000ms
 		// send data:  id = 0x00, standrad flame, data len = 8, stmp: data buf
-		can0.sendMsgBuf(buildAdr(CT_REGISTER,0x000001,REG_ID), 1, 8, stmp);
+		//can0.sendMsgBuf(buildAdr(TT_REGISTER,LE_PING), 1, 8, "Im alive");
 	}
 
-	void sendValues5000(){
+	void can5000(){ // sendet alle 5000ms
 		// send data:  id = 0x00, standrad flame, data len = 8, stmp: data buf
-		can0.sendMsgBuf(buildAdr(CT_REGISTER,0x000001,REG_ID), 1, 8, stmp);
+		can0.sendMsgBuf(buildAdr(TT_REGISTER,LE_PING), 1, 8, "Im alive");
 	}
 #endif
 
 
+
+
 #ifdef ADDON_LCD_LED
 
-	void printLcd(){
+	/*void printLcd(){
 		// als Statemaschine sollte das LCD geupdatet werden, sonst wird das delay zu hoch.
 		// 
 		// 		 HEIZUNG			MENUE			WHATEVER
@@ -154,14 +164,21 @@ void SerPrint(const char str[]){
 				state = 0;
 				break;
 		}
-	}
+	}*/
 
 	 void lcdHelloWorld(){
-		tft.setCursor(0, 0);
+	 	static uint32_t a = 10;
+	 	a++;
+		if(a >10){
+			a=0;
+			tft.setCursor(0, 0);
+			tft.fillScreen(WHITE);
+			tft.setTextColor(BLACK, WHITE);
+		} 
 		tft.println("Hello World!"); 
 	}
 
-	void setStatusLedsToTemperature(float in, float min, float max){
+	/*void setStatusLedsToTemperature(float in, float min, float max){
 		// temperatur auf 8 LEDs skalieren. 
 		// zb von 18-26grad. größere bereiche würde quasi keine veränderung auf der skala bedeuten.
 		float b, a = (max-min)/8;
@@ -172,15 +189,18 @@ void SerPrint(const char str[]){
 				statusLeds.digitalWrite(i,0);
 			}
 		}
-	}
+	}*/
 
   	void statusLedsTest(){
 		static uint16_t s = 0xFFFF;
-		if(s == 0xFFFF)
+		if(s == 0xFFFF){
 			s = 0x0000;
-		else
+		}
+		else{
 			s = 0xFFFF;
+		}
 		statusLeds.writePort(s);
+		
 	}
 #endif
 
@@ -202,7 +222,7 @@ void SerPrint(const char str[]){
 #endif
 
 void serialEvent() {
-  while (Serial.available()) {
+  /*while (Serial.available()) {
     // get the new byte:
     char inChar = (char)Serial.read();
     // add it to the inputString:
@@ -212,5 +232,5 @@ void serialEvent() {
     if (inChar == '\n') {
       stringComplete = true;
     }
-  }
+  }*/
 }

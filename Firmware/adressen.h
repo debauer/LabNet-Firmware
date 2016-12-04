@@ -1,17 +1,37 @@
-#define CT_MASK           	0x1F000000000000
+if HW == BASIS
+	#define NODEID 0x010000 + HWID
+#elif HW == POWER_HUB
+	#define NODEID 0xFF0000 + HWID
+#elif HW == BRDIGE 
+	#define NODEID 0x000000 + HWID
+#else // alle andern
+	#define NODEID 0xAA0000 + HWID
+#endif
+
+
+#define TT_MASK           	0x1F000000000000
 #define REG_MASK           	0x00000000FFFFFF
 #define NODE_MASK           0x00FFFFFF000000
 #define SENSOR_MASK         0x00000000FFFFFF
 
-#define CT_EVENT_GlOBAL   	0x00
-#define CT_EVENT_LOCAL    	0x01
-#define CT_REGISTER       	0x03
-#define CT_ANNOUNCE      	0x04
-#define CT_EEPROM_WR      	0x08
-#define CT_EEPROM_REQ     	0x09
-#define CT_EEPROM_REPLY   	0x0A
-#define CT_SF				0x0B
+// TT Telegram Type
+#define TT_EVENT_GlOBAL   	0x00
+#define TT_EVENT_LOCAL    	0x01
+#define TT_REGISTER       	0x03
+#define TT_ANNOUNCE      	0x04
+#define TT_EEPROM_WR      	0x08
+#define TT_EEPROM_REQ     	0x09
+#define TT_EEPROM_REPLY   	0x0A
+#define TT_SF				0x0B
 
+// TT_EVENT_LOCAL & REG_MASK
+#define LE_PING 			0x000000
+#define LE_STARTUP			0x000001
+#define LE_REBOOT 			0x000002 // ich werde rebooten
+#define LE_SLEEP			0x000003 // ich werde schlafen gehen
+#define LE_STANDBY			0x000004 // ich gehe in standby
+
+// TT_REGISTER & REG_MASK
 #define REG_ID				0x000000
 #define REG_NAME1			0x000001
 #define REG_NAME2			0x000002
@@ -23,6 +43,7 @@
 #define REG_TIME			0x000014
 #define REG_DATE 			0x000015
 
+// TT_ANNOUNCE & REG_MASK
 #define SENSOR_TEMPERATUR1 		0x000000
 #define SENSOR_TEMPERATUR2 		0x000001
 #define SENSOR_TEMPERATUR3 		0x000002
