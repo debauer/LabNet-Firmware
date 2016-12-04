@@ -10,11 +10,16 @@
 
 #include "pinning.h"          // project folder
 #include "adressen.h"         // project folder
-#include "misc.h"             // project folder
+#include "defines.h"          // project folder
+#include "structs.h"          // project folder
 
 #define ino_file
 	#include "globals.h"        // Globale Variablen.
 #undef ino_file 
+
+#if HW == POWER_HUB
+ 	#include "power_hub.h"
+#endif
 
 #include <SPI.h>              // Arduino Lib
 #include <Timer.h>            // http://playground.arduino.cc/Code/Timer
@@ -44,7 +49,7 @@ Timer t;
 #endif
 
 
-void setup() {
+void setup(){
 	int i;
 	// start serial port
 	Serial.begin(9600);
@@ -62,18 +67,8 @@ void setup() {
 	SerPrintLn("Maintainer: David Bauer");
 
 	#if HW == POWER_HUB
-		fuse[0] = FUSE0;
-		fuse[1] = FUSE1;
-		fuse[2] = FUSE2;
-		fuse[3] = FUSE3;
-		fuse[4] = FUSE4;
-		fuse[5] = FUSE5;
-		fuse[6] = FUSE6;
-		fuse[7] = FUSE7;
-		for(i=0;i<8;i++){
-			pinMode(fuse[i], INPUT);
-			fuseStatus[i] = FUSE_STATUS_UNDEF;
-		}
+		power_hub_init();
+		t.every(10, power_hub_task);
 	#endif
   
 	#ifdef RITTAL_LEISTEN
@@ -86,83 +81,126 @@ void setup() {
 		SerPrintLn("init CAN Bus, baudrate: 125k");
 		can0.begin(MCP_STDEXT,CAN_125KBPS, MCP_16MHZ);
 		can0.setMode(MCP_NORMAL);
-		t.every(1000, sendValues1000);
-		t.every(5000, sendValues5000);
+		t.every(1000, can1000);
+		t.every(5000, can5000);
+		can0.sendMsgBuf(buildAdr(TT_REGISTER,LE_STARTUP), 1, 8, "Im here!");
 	#endif
 
 	#ifdef ADDON_LCD_LED
-		SerPrintLn("Addon LCD LED V1.0");
+		tft.begin();
 		statusLeds.begin();
+		delay(100);
+		
+		SerPrintLn("Addon LCD LED V1.0");
+		delay(100);
 		for(i=0;i<16;i++){
 			statusLeds.pinMode(i,OUTPUT);
 		}
-		lcdHelloWorld();
+		t.every(1000, lcdHelloWorld);
+		t.every(500, statusLedsTest);
 	#endif
-
-  
+	
 }
 
 void loop() {
 	t.update();
-	readVoltages();
 }
 
 void SerPrintLn(const char str[]){
 	#ifdef SERIAL_OUTPUT
-		Serial.println("Addon LCD LED V1.0");
+		Serial.println(str);
 	#endif
 }
 
 void SerPrint(const char str[]){
 	#ifdef SERIAL_OUTPUT
-		Serial.print("Addon LCD LED V1.0");
+		Serial.print(str);
 	#endif
 }
-
-void readVoltages(){
-	voltage24 = analogRead(V24) * (5.0 / 1023.0/1.5*11.5);
-}
-
-#if HW == POWER_HUB
-	void readFuses(){
-		for(i=0;i<8;i++){
-			if(digitalRead(fuse[i])==1){	
-				fuseStatus[i] = FUSE_STATUS_OK;
-			}else{
-				fuseStatus[i] = FUSE_STATUS_KAPUTT;
-			}
-		}
-	}
-#endif
 
 #ifdef CAN_BUS
 	unsigned char stmp[8] = {0, 1, 2, 3, 4, 5, 6, 7};
 
-	void sendValues1000(){
-		// send data:  id = 0x00, standrad flame, data len = 8, stmp: data buf
-		can0.sendMsgBuf(CT_ANNCOUNCE+0x01, 1, 8, stmp);
+	// CT ID, Register/Sensor
+	uint32_t buildAdr(uint8_t a, uint32_t c){
+		return 0x00000000 | ((uint32_t)(a & 0x1F)) << 24 | ((uint32_t)(NODEID & 0x0FFF)) << 12 | ((uint32_t)(c & 0x0FFF));
 	}
 
-	void sendValues5000(){
+	void can1000(){ // sendet alle 1000ms
 		// send data:  id = 0x00, standrad flame, data len = 8, stmp: data buf
-		can0.sendMsgBuf(CT_ANNCOUNCE+0x01, 1, 8, stmp);
+		//can0.sendMsgBuf(buildAdr(TT_REGISTER,LE_PING), 1, 8, "Im alive");
+	}
+
+	void can5000(){ // sendet alle 5000ms
+		// send data:  id = 0x00, standrad flame, data len = 8, stmp: data buf
+		can0.sendMsgBuf(buildAdr(TT_REGISTER,LE_PING), 1, 8, "Im alive");
 	}
 #endif
 
 
+
+
 #ifdef ADDON_LCD_LED
+
+	/*void printLcd(){
+		// als Statemaschine sollte das LCD geupdatet werden, sonst wird das delay zu hoch.
+		// 
+		// 		 HEIZUNG			MENUE			WHATEVER
+		//
+		//	|---------------| |---------------| |---------------| 
+		//	| fortlaufender	| |> Setup 		  | |               |
+		// 	| Output des    | |  Reset  	  | |               |
+		//  | Nodes		    | |  Values		  | |         	    | 
+		//	|_______________| |_______________| |               |
+		//	|T:23.1 F:closed| |T:23.1 F:closed| |               |
+		//	|---------------| |---------------| |---------------|
+		// 
+		// 
+		static uint8_t state = 0;
+		switch(state){
+			state 0: // startup
+				break;
+			default:
+				state = 0;
+				break;
+		}
+	}*/
+
 	 void lcdHelloWorld(){
-		tft.setCursor(0, 0);
+	 	static uint32_t a = 10;
+	 	a++;
+		if(a >10){
+			a=0;
+			tft.setCursor(0, 0);
+			tft.fillScreen(WHITE);
+			tft.setTextColor(BLACK, WHITE);
+		} 
 		tft.println("Hello World!"); 
 	}
 
+	/*void setStatusLedsToTemperature(float in, float min, float max){
+		// temperatur auf 8 LEDs skalieren. 
+		// zb von 18-26grad. größere bereiche würde quasi keine veränderung auf der skala bedeuten.
+		float b, a = (max-min)/8;
+		while(int i=0;i<8;i++){
+			if(in>a){
+				statusLeds.digitalWrite(i,1);
+			}else{
+				statusLeds.digitalWrite(i,0);
+			}
+		}
+	}*/
+
   	void statusLedsTest(){
 		static uint16_t s = 0xFFFF;
-		if(s == 0xFFFF)
+		if(s == 0xFFFF){
 			s = 0x0000;
-		else
+		}
+		else{
 			s = 0xFFFF;
+		}
 		statusLeds.writePort(s);
+		
 	}
 #endif
 
@@ -182,3 +220,17 @@ void readVoltages(){
 	Rittal0.task();
   }
 #endif
+
+void serialEvent() {
+  /*while (Serial.available()) {
+    // get the new byte:
+    char inChar = (char)Serial.read();
+    // add it to the inputString:
+    inputString += inChar;
+    // if the incoming character is a newline, set a flag
+    // so the main loop can do something about it:
+    if (inChar == '\n') {
+      stringComplete = true;
+    }
+  }*/
+}
