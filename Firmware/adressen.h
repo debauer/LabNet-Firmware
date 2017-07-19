@@ -1,18 +1,18 @@
-if HW == BASIS
-	#define NODEID 0x010000 + HWID
+#if HW == BASIS
+	#define NODEID 0x100 | HWID
 #elif HW == POWER_HUB
-	#define NODEID 0xFF0000 + HWID
+	#define NODEID 0xF00 | HWID
 #elif HW == BRDIGE 
-	#define NODEID 0x000000 + HWID
+	#define NODEID 0x000 | HWID
 #else // alle andern
-	#define NODEID 0xAA0000 + HWID
+	#define NODEID 0xA00 | HWID
 #endif
 
 
-#define TT_MASK           	0x1F000000000000
-#define REG_MASK           	0x00000000FFFFFF
-#define NODE_MASK           0x00FFFFFF000000
-#define SENSOR_MASK         0x00000000FFFFFF
+#define TT_MASK           	0x1F000000
+#define REG_MASK           	0x00000FFF
+#define NODE_MASK           0x00FFF000
+#define SENSOR_MASK         0x00000FFF
 
 // TT Telegram Type
 #define TT_EVENT_GlOBAL   	0x00

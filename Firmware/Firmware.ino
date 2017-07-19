@@ -60,7 +60,8 @@ void setup(){
 	#else
 		SerPrintLn("BASIS");
 	#endif
-	SerPrint("NODEID: ");
+	SerPrint("NODEID: 0x");
+  Serial.println(NODEID, HEX);
 	SerPrint("Firmware Version: ");
 	SerPrintLn(VERSION);
 	SerPrintLn("Project Origin: Fablab Karlsruhe e.V.");
@@ -83,7 +84,7 @@ void setup(){
 		can0.setMode(MCP_NORMAL);
 		t.every(1000, can1000);
 		t.every(5000, can5000);
-		can0.sendMsgBuf(buildAdr(TT_REGISTER,LE_STARTUP), 1, 8, "Im here!");
+		can0.sendMsgBuf(buildAdr(TT_REGISTER,LE_STARTUP), 1, 8, (byte*)"Im here!");
 	#endif
 
 	#ifdef ADDON_LCD_LED
@@ -133,7 +134,7 @@ void SerPrint(const char str[]){
 
 	void can5000(){ // sendet alle 5000ms
 		// send data:  id = 0x00, standrad flame, data len = 8, stmp: data buf
-		can0.sendMsgBuf(buildAdr(TT_REGISTER,LE_PING), 1, 8, "Im alive");
+		can0.sendMsgBuf(buildAdr(TT_REGISTER,LE_PING), 1, 8, (byte*)"Im alive");
 	}
 #endif
 

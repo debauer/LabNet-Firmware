@@ -7,11 +7,11 @@
 #define MCP23S17_STATUS_ADR 0
 
 // AB HIER ÄNDERN
-#define HWID 0x01  		// NODEID besteht aus HW + HWID // max 0xFFFF
-#define HW BASIS
+#define HWID 0x01  		// NODEID besteht aus HW + HWID // max 0xFF
+#define HW POWER_HUB
 
 // uncomment if not needed
-// #define RITTAL_LEISTEN
+#define RITTAL_LEISTEN
 #define CAN_BUS
 #define ONEWIRE
 #define SERIAL_OUTPUT 		// konflikte mit HR20 ??
