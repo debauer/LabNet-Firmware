@@ -1,5 +1,6 @@
 #include "power_hub.h"            // project folder
 
+
 void read_fuses();
 void readVoltage();
 
@@ -9,6 +10,7 @@ void power_hub_task(){
 }
 
 void power_hub_init(){
+
 	int i;
 	fuse[0] = FUSE0;
 	fuse[1] = FUSE1;
@@ -37,5 +39,5 @@ void read_fuses(){
 }
 
 void readVoltage(){
-	voltage24 = analogRead(V24) * (5.0 / 1023.0/1.5*11.5);
+	voltages[VOLTAGE24] = analogRead(V24) * (5.0 / 1023.0/1.5*11.5);
 }

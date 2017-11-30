@@ -25,20 +25,15 @@
 #define TT_SF				0x0B
 
 // TT_EVENT_LOCAL & REG_MASK
-#define LE_PING 			0x000000
-#define LE_STARTUP			0x000001
-#define LE_REBOOT 			0x000002 // ich werde rebooten
-#define LE_SLEEP			0x000003 // ich werde schlafen gehen
-#define LE_STANDBY			0x000004 // ich gehe in standby
+#define LE_RESET   			0x000010
+#define LE_DEFAULTI			0x000011	
+#define LE_DEFAULTE			0x000012
 
 // TT_REGISTER & REG_MASK
 #define REG_ID				0x000000
 #define REG_NAME1			0x000001
 #define REG_NAME2			0x000002
 #define REG_UPTIME			0x000003
-#define REG_RESET   		0x000010
-#define REG_DEFAULTI		0x000011	
-#define REG_DEFAULTE		0x000012
 #define REG_STATUS  		0x000013
 #define REG_TIME			0x000014
 #define REG_DATE 			0x000015
@@ -80,7 +75,7 @@
 
 #define SENSOR_FUSES			0x000020
 
-#define SENSOR_RITTAL1 			0x000030
-#define SENSOR_RITTAL2 			0x000031
-#define SENSOR_RITTAL3 			0x000032
-#define SENSOR_RITTAL4 			0x000033
+#define SENSOR_RITTAL1 			0x000031
+#define SENSOR_RITTAL2 			0x000032
+#define SENSOR_RITTAL3 			0x000033
+#define SENSOR_RITTAL4 			0x000034

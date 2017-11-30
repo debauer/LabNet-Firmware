@@ -15,6 +15,7 @@
 #define CAN_BUS
 #define ONEWIRE
 #define SERIAL_OUTPUT 		// konflikte mit HR20 ??
+#define SOFTSERIAL
 
 /*
  * Vorhandene Addons auf der Basis und evtl Einstellungen

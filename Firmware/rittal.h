@@ -6,18 +6,35 @@
 #include "structs.h"	// project folder
 #include "globals.h"          // Globale Variablen.
 
-#ifdef __cplusplus
-extern "C" {
+#if ARDUINO >= 100
+  #include "Arduino.h"
+#else
+  #include "WProgram.h"
+  #include "pins_arduino.h"
+  #include "WConstants.h"
 #endif
 
-#ifndef RITTAL_H_   /* Include guard */
-#define RITTAL_H_
+class Rittal {
+  public:
+    Rittal();
+    
+    void init();
+    void task();
+    void setPlug(uint8_t id, uint8_t plug);
+    void setLeiste(uint8_t id, uint8_t value);
+    void setSocket(uint8_t id, uint8_t socket, uint8_t value);
+ 	  void setAvail(uint8_t id, uint8_t value);
+    void setMin(uint8_t id, uint8_t value);
+    void setMax(uint8_t id, uint8_t value);
+    void resetAll();
+    void reset(uint8_t id);
+    rittal_s leiste[4];
 
-void rittal_init();
-void rittal_task();
-
-#endif // RITTAL_H_ 
-
-#ifdef __cplusplus
-}
-#endif
+  private:
+  	void sendData(rittal_s r);
+  	void sendReq(uint8_t id);
+    void saveReqAnswer();
+    void sendDebug(char arr[]);
+    void retrySwitch();
+    void sendRittalAnnounce(uint8_t rid);
+};

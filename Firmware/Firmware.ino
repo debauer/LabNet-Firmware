@@ -3,8 +3,9 @@
  * Maintainer: David Bauer
  */
 
- #define VERSION "0.1"
+#define VERSION "0.2"
 
+#include <EEPROM.h>
 
 #include "setup.h"            // project folder
 
@@ -12,6 +13,14 @@
 #include "adressen.h"         // project folder
 #include "defines.h"          // project folder
 #include "structs.h"          // project folder
+#include "SoftwareSerial.h"
+#ifdef CAN_BUS
+	#include "mcp_can.h"        // https://github.com/coryjfowler/MCP_CAN_lib
+	long unsigned int canRxId;
+	unsigned char canLen = 0;
+	unsigned char canRxBuf[8];
+	char canMsgString[128]; 
+#endif
 
 #define ino_file
 	#include "globals.h"        // Globale Variablen.
@@ -30,14 +39,9 @@ Timer t;
 	#include <OneWire.h>        // https://github.com/PaulStoffregen/OneWire
 #endif
 
-#ifdef CAN_BUS
-	#include <mcp_can.h>        // https://github.com/coryjfowler/MCP_CAN_lib
-	MCP_CAN can0(CAN_CS);
-#endif
-
 #ifdef RITTAL_LEISTEN
 	#include "rittal.h" 
-	Rittal Rittal0(RS485_RE); 
+	Rittal rittal0;
 #endif
 
 #ifdef ADDON_LCD_LED
@@ -48,11 +52,24 @@ Timer t;
 	MCP23S17 statusLeds(&SPI, EXPANDER_CS, MCP23S17_STATUS_ADR);
 #endif
 
+//#define SERIAL_DEBUG
+#ifdef SERIAL_DEBUG
+	SoftwareSerial debug(SOFTSERIAL_RX, SOFTSERIAL_TX); // RX, TX
+#endif
+
+void saveEeprom(){
+
+}
+
+void readEeprom(){
+
+}
+
 
 void setup(){
 	int i;
 	// start serial port
-	Serial.begin(9600);
+	Serial.begin(19200);
 	SerPrintLn("Booting LabNet Node");
 	SerPrint("HW: ");
 	#if HW == POWER_HUB
@@ -61,7 +78,7 @@ void setup(){
 		SerPrintLn("BASIS");
 	#endif
 	SerPrint("NODEID: 0x");
-  Serial.println(NODEID, HEX);
+    Serial.println(NODEID, HEX);
 	SerPrint("Firmware Version: ");
 	SerPrintLn(VERSION);
 	SerPrintLn("Project Origin: Fablab Karlsruhe e.V.");
@@ -69,22 +86,28 @@ void setup(){
 
 	#if HW == POWER_HUB
 		power_hub_init();
-		t.every(10, power_hub_task);
-	#endif
-  
-	#ifdef RITTAL_LEISTEN
-		Rittal0.init();
-		t.every(10, rittalTask);
-		t.every(5000, rittalTest);
+		t.every(500, power_hub_task);
 	#endif
 
 	#ifdef CAN_BUS
-		SerPrintLn("init CAN Bus, baudrate: 125k");
+		SerPrintLn("init CAN Bus - Baudrate: 125k, 16MHz Quarz, Extendet");
 		can0.begin(MCP_STDEXT,CAN_125KBPS, MCP_16MHZ);
 		can0.setMode(MCP_NORMAL);
 		t.every(1000, can1000);
 		t.every(5000, can5000);
-		can0.sendMsgBuf(buildAdr(TT_REGISTER,LE_STARTUP), 1, 8, (byte*)"Im here!");
+		t.every(100000, canRittalStatus); //1m
+		t.every(1000, canSensors); //1s
+		#ifdef RITTAL_LEISTEN
+			t.every(1000, canRittal);
+		#endif
+		can0.sendMsgBuf(buildAdr(TT_EVENT_LOCAL,LE_STARTUP), 1, 8, (byte*)"Im here!");
+	#endif
+
+	#ifdef RITTAL_LEISTEN
+		rittal0.init();
+		rittal0.resetAll();
+		t.every(20, rittalTask);
+		t.every(5000, rittalTest);
 	#endif
 
 	#ifdef ADDON_LCD_LED
@@ -100,11 +123,21 @@ void setup(){
 		t.every(1000, lcdHelloWorld);
 		t.every(500, statusLedsTest);
 	#endif
-	
+
+	for(i=0;i<16;i++){
+		temperatur[i] = 99999.9;
+	}
+	for(i=0;i<16;i++){
+		voltages[i] = 99999.9;
+	}
+	#ifdef SERIAL_DEBUG
+		debug.begin(57600);
+	#endif
 }
 
 void loop() {
 	t.update();
+	canRcv();
 }
 
 void SerPrintLn(const char str[]){
@@ -120,11 +153,94 @@ void SerPrint(const char str[]){
 }
 
 #ifdef CAN_BUS
-	unsigned char stmp[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+	uint8_t stmp[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+	uint8_t buf[8];
 
 	// CT ID, Register/Sensor
 	uint32_t buildAdr(uint8_t a, uint32_t c){
 		return 0x00000000 | ((uint32_t)(a & 0x1F)) << 24 | ((uint32_t)(NODEID & 0x0FFF)) << 12 | ((uint32_t)(c & 0x0FFF));
+	}
+
+	void canRcv(){
+		if(can0.checkReceive() == CAN_MSGAVAIL){
+			can0.readMsgBuf(&canRxId, &canLen, canRxBuf);
+			#ifdef RITTAL_LEISTEN
+
+				// CAN RITTAL 1-4
+				if((canRxId & 0x1FFFFFFF) >= buildAdr(TT_EVENT_LOCAL,SENSOR_RITTAL1) && (canRxId & 0x1FFFFFFF) <= buildAdr(TT_EVENT_LOCAL,SENSOR_RITTAL4)){
+					for(byte i = 0; i<6; i++){
+						if(canRxBuf[2+i] != 0x02){
+							if(canRxBuf[2+i]==1){
+								rittal0.setSocket((canRxId & 0x0F),i+1,true);
+							}else if(canRxBuf[2+i]==0){
+								rittal0.setSocket((canRxId & 0x0F),i+1,false);
+							}
+						}
+					}
+					//debug.println("setSocket");
+				}
+				if((canRxId & 0x1FFFFFFF) == buildAdr(TT_EVENT_LOCAL,SENSOR_RITTAL1)){
+				
+				// TT_EEPROM_WR
+				if((canRxId & 0x1FFFFFFF) >= buildAdr(TT_EEPROM_WR,0x00000) && (canRxId & 0x1FFFFFFF) <= buildAdr(TT_EEPROM_WR,0xFFFFFF) ){
+					for(int i =0; i<canLen;i++){
+						EEPROM.write((canRxId & 0xFFFFFF)+i,canRxBuf[i]);
+					}
+				}
+				// TT_EEPROM_WR
+				if((canRxId & 0x1FFFFFFF) >= buildAdr(TT_EEPROM_REQ,0x00000) && (canRxId & 0x1FFFFFFF) <= buildAdr(TT_EEPROM_WR,0xFFFFFF) ){
+					for(int i =0; i<canLen;i++){
+						buf[i] = EEPROM.read((canRxId & 0xFFFFFF)+i);
+
+					}
+					can0.sendMsgBuf(buildAdr(TT_EEPROM_REPLY,canRxId & 0xFFFFFF), 1, canLen, buf);
+				}
+
+
+			#endif
+			//sprintf(canMsgString, "Extended ID: 0x%.8lX  DLC: %1d  Data:", (canRxId & 0x1FFFFFFF), canLen);
+			//debug.print(canMsgString);
+			//for(byte i = 0; i<canLen; i++){
+			//	sprintf(canMsgString, " 0x%.2X", canRxBuf[i]);
+			//	debug.print(canMsgString);
+			//}
+		}
+	}
+
+	uint8_t floatToBuf(float t){
+		if(t != 99999.9){
+			uint32_t ui;
+			long l = *(long*) &t;
+			buf[0] = l & 0x00FF;
+    		buf[1] = (l >> 8) & 0x00FF;
+    		buf[2] = (l >> 16) & 0x00FF;
+    		buf[3] = l >> 24;
+    		buf[4] = '+';
+    		if(t < 0.0){
+    			buf[4] = '-';
+    			t = t*-1;
+    		}
+    		ui = (uint32_t)t;
+    		if(ui>=999){
+    			buf[5] = '9';buf[6] = '9';buf[7] = '9';
+    		}else{
+    			buf[5] = '0'+(uint8_t)ui/100;
+    			buf[6] = '0'+(uint8_t)(ui-(ui/100)*100)/10;
+    			buf[7] = '0'+(uint8_t)ui-(ui/100)*100-((ui-(ui/100)*100)/10)*10;
+			}
+		}
+	}
+
+	void canSensors(){
+		can0.sendMsgBuf(buildAdr(TT_ANNOUNCE,SENSOR_FUSES), 1, 8, fuseStatus);
+		for(int i=0;i<16;i++){
+			if(floatToBuf(temperatur[i]))can0.sendMsgBuf(buildAdr(TT_ANNOUNCE,SENSOR_TEMPERATUR1+i), 1, 8, buf);
+			if(floatToBuf(voltages[i]))can0.sendMsgBuf(buildAdr(TT_ANNOUNCE,SENSOR_VOLTAGE1+i), 1, 8, buf);
+		}	
+	}
+
+	void canRittalStatus(){ // sendet alle 1m
+		can0.sendMsgBuf(buildAdr(TT_EVENT_LOCAL,LE_PING), 1, 8, (byte*)"Im alive");
 	}
 
 	void can1000(){ // sendet alle 1000ms
@@ -134,11 +250,36 @@ void SerPrint(const char str[]){
 
 	void can5000(){ // sendet alle 5000ms
 		// send data:  id = 0x00, standrad flame, data len = 8, stmp: data buf
-		can0.sendMsgBuf(buildAdr(TT_REGISTER,LE_PING), 1, 8, (byte*)"Im alive");
+		can0.sendMsgBuf(buildAdr(TT_ANNOUNCE,LE_PING), 1, 8, (byte*)"Im alive");
 	}
+
+	#ifdef RITTAL_LEISTEN
+	void canRittal(){
+		for(int i=0;i<4;i++){
+			//can0.sendMsgBuf(buildAdr(TT_ANNOUNCE,SENSOR_RITTAL1+i), 1, 8, rittal[i].d);
+		}
+	}
+	#endif
 #endif
 
+#ifdef RITTAL_LEISTEN
+  void rittalTest(){
+	static uint8_t s = 0;
+	/* if(s){
+	  rittal0.set(1,0x3F);
+	  s=0;
+	}else{
+	  Rittal0.set(1,0x00);
+	  s=1;
+	} */
+  }
 
+  void rittalTask(){
+	rittal0.task();
+  }
+
+  
+#endif
 
 
 #ifdef ADDON_LCD_LED
@@ -205,22 +346,7 @@ void SerPrint(const char str[]){
 	}
 #endif
 
-#ifdef RITTAL_LEISTEN
-  void rittalTest(){
-	static uint8_t s = 0;
-	if(s){
-	  Rittal0.set(1,0x3F);
-	  s=0;
-	}else{
-	  Rittal0.set(1,0x00);
-	  s=1;
-	}
-  }
 
-  void rittalTask(){
-	Rittal0.task();
-  }
-#endif
 
 void serialEvent() {
   /*while (Serial.available()) {
