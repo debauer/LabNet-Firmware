@@ -100,7 +100,7 @@ void setup(){
 		#ifdef RITTAL_LEISTEN
 			t.every(1000, canRittal);
 		#endif
-		can0.sendMsgBuf(buildAdr(TT_EVENT_LOCAL,LE_STARTUP), 1, 8, (byte*)"Im here!");
+		can0.sendMsgBuf(buildAdr(TT_ANNOUNCE,ANNOUNCE_STARTUP), 1, 8, (byte*)"Im here!");
 	#endif
 
 	#ifdef RITTAL_LEISTEN
@@ -167,7 +167,7 @@ void SerPrint(const char str[]){
 			#ifdef RITTAL_LEISTEN
 
 				// CAN RITTAL 1-4
-				if((canRxId & 0x1FFFFFFF) >= buildAdr(TT_EVENT_LOCAL,SENSOR_RITTAL1) && (canRxId & 0x1FFFFFFF) <= buildAdr(TT_EVENT_LOCAL,SENSOR_RITTAL4)){
+				if((canRxId & 0x1FFFFFFF) >= buildAdr(TT_EVENT_LOCAL,EVENT_LOCAL_RITTAL1) && (canRxId & 0x1FFFFFFF) <= buildAdr(TT_EVENT_LOCAL,ANNOUNCE_RITTAL4)){
 					for(byte i = 0; i<6; i++){
 						if(canRxBuf[2+i] != 0x02){
 							if(canRxBuf[2+i]==1){
@@ -179,7 +179,7 @@ void SerPrint(const char str[]){
 					}
 					//debug.println("setSocket");
 				}
-				if((canRxId & 0x1FFFFFFF) == buildAdr(TT_EVENT_LOCAL,SENSOR_RITTAL1)){
+				if((canRxId & 0x1FFFFFFF) == buildAdr(TT_EVENT_LOCAL,EVENT_LOCAL_RITTAL1)){
 				
 				// TT_EEPROM_WR
 				if((canRxId & 0x1FFFFFFF) >= buildAdr(TT_EEPROM_WR,0x00000) && (canRxId & 0x1FFFFFFF) <= buildAdr(TT_EEPROM_WR,0xFFFFFF) ){
@@ -195,8 +195,6 @@ void SerPrint(const char str[]){
 					}
 					can0.sendMsgBuf(buildAdr(TT_EEPROM_REPLY,canRxId & 0xFFFFFF), 1, canLen, buf);
 				}
-
-
 			#endif
 			//sprintf(canMsgString, "Extended ID: 0x%.8lX  DLC: %1d  Data:", (canRxId & 0x1FFFFFFF), canLen);
 			//debug.print(canMsgString);
@@ -206,6 +204,7 @@ void SerPrint(const char str[]){
 			//}
 		}
 	}
+}
 
 	uint8_t floatToBuf(float t){
 		if(t != 99999.9){
@@ -232,31 +231,31 @@ void SerPrint(const char str[]){
 	}
 
 	void canSensors(){
-		can0.sendMsgBuf(buildAdr(TT_ANNOUNCE,SENSOR_FUSES), 1, 8, fuseStatus);
-		for(int i=0;i<16;i++){
-			if(floatToBuf(temperatur[i]))can0.sendMsgBuf(buildAdr(TT_ANNOUNCE,SENSOR_TEMPERATUR1+i), 1, 8, buf);
-			if(floatToBuf(voltages[i]))can0.sendMsgBuf(buildAdr(TT_ANNOUNCE,SENSOR_VOLTAGE1+i), 1, 8, buf);
-		}	
+		can0.sendMsgBuf(buildAdr(TT_ANNOUNCE,ANNOUNCE_FUSES), 1, 8, fuseStatus);
+		/*for(int i=0;i<16;i++){
+			if(floatToBuf(temperatur[i]))can0.sendMsgBuf(buildAdr(TT_ANNOUNCE,ANNOUNCE_TEMPERATUR1+i), 1, 8, buf);
+			if(floatToBuf(voltages[i]))can0.sendMsgBuf(buildAdr(TT_ANNOUNCE,ANNOUNCE_VOLTAGE1+i), 1, 8, buf);
+		}	*/
 	}
 
 	void canRittalStatus(){ // sendet alle 1m
-		can0.sendMsgBuf(buildAdr(TT_EVENT_LOCAL,LE_PING), 1, 8, (byte*)"Im alive");
+		//can0.sendMsgBuf(buildAdr(TT_EVENT_LOCAL,ANNOUNCE_PING), 1, 8, (byte*)"Im alive");
 	}
 
 	void can1000(){ // sendet alle 1000ms
 		// send data:  id = 0x00, standrad flame, data len = 8, stmp: data buf
-		//can0.sendMsgBuf(buildAdr(TT_REGISTER,LE_PING), 1, 8, "Im alive");
+		//can0.sendMsgBuf(buildAdr(TT_REGISTER,ANNOUNCE_PING), 1, 8, "Im alive");
 	}
 
 	void can5000(){ // sendet alle 5000ms
 		// send data:  id = 0x00, standrad flame, data len = 8, stmp: data buf
-		can0.sendMsgBuf(buildAdr(TT_ANNOUNCE,LE_PING), 1, 8, (byte*)"Im alive");
+		can0.sendMsgBuf(buildAdr(TT_ANNOUNCE,ANNOUNCE_PING), 1, 8, (byte*)"Im alive");
 	}
 
 	#ifdef RITTAL_LEISTEN
 	void canRittal(){
 		for(int i=0;i<4;i++){
-			//can0.sendMsgBuf(buildAdr(TT_ANNOUNCE,SENSOR_RITTAL1+i), 1, 8, rittal[i].d);
+			//can0.sendMsgBuf(buildAdr(TT_ANNOUNCE,ANNOUNCE_RITTAL1+i), 1, 8, rittal[i].d);
 		}
 	}
 	#endif

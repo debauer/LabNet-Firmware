@@ -24,7 +24,7 @@
 #define ANSWER_LENGHT 50
 
 #define UPDATE_EVERY 1000 // in millis, 1000 = 1s
-#define NEW_AVAIL_CHECK 50000
+#define NEW_AVAIL_CHECK 50000 // aktuell nicht benutzt. stattdessen werden einfach alle jede UPDATE_EVERY abgefragt.
 
 #define MAX_TRYS 3
 
@@ -68,6 +68,9 @@ void Rittal::sendReq(uint8_t id){
 	Serial.flush();
 	digitalWrite(RS485_RE,0);
 }
+
+uint8_t debugStr [40];
+uint8_t debugChecksum = 0x00;
 
 void Rittal::sendData(rittal_s r){
 	int i;
@@ -115,23 +118,31 @@ void Rittal::sendData(rittal_s r){
 		Serial.write(str[i]);
 		i++;
 	}
+	if(checksum <= 0x0F){
+		Serial.print('0');
+	}
 	Serial.print(checksum, HEX);
 	Serial.write(0x03);
 	Serial.flush();
 	digitalWrite(RS485_RE,0);
+	for(int i=0;i<40;i++){
+		debugStr[i] = str[i];
+	}
+	debugChecksum = checksum;
 }
 
 void Rittal::saveReqAnswer(){
 	// i01N15AAAAAAAAAA00F3010000010100000F000020
+	// i01N15ActivePSM 01D7010000010100000F000065
 	for(int j=0;j<10;j++){
 		leiste[id-1].name[j] = answer[7+j];
 	}
-	leiste[id-1].d1 = answer[32] & 0x01;
+	/*leiste[id-1].d1 = answer[32] & 0x01;
 	leiste[id-1].d2 = answer[32] & 0x02 >> 1;
 	leiste[id-1].d3 = answer[32] & 0x04 >> 2;
 	leiste[id-1].d4 = answer[32] & 0x08 >> 4;
 	leiste[id-1].d5 = answer[31] & 0x01;
-	leiste[id-1].d6 = answer[31] & 0x02 >> 1;
+	leiste[id-1].d6 = answer[31] & 0x02 >> 1;*/
 	leiste[id-1].min = answer[34];
 	leiste[id-1].max = answer[36];
 	leiste[id-1].current = (answer[23]-0x30)*1000+(answer[24]-0x30)*100+(answer[25]-0x30)*10+(answer[26]-0x30)*1;
@@ -149,29 +160,42 @@ void Rittal::retrySwitch(){
 
 void Rittal::sendDebug(char arr[]){
 	#ifdef SERIAL_DEBUG
-	debug.print(state);
-	debug.print("-");
-	debug.print(id);
-	debug.print("-");
-	debug.print(trys);
-	debug.print("-");
-	debug.print(loops);
-	debug.print("-");
-	debug.print(count);
-	debug.print("-");
-	debug.print(leiste[id-1].current);
-	debug.print("-");
+	//debug.print(state);
+	//debug.print("-");
+	//debug.print(id);
+	//debug.print("-");
+	//debug.print(trys);
+	//debug.print("-");
+	//debug.print(loops);
+	//debug.print("-");
+	//debug.print(count);
+	//debug.print("-");
+	//debug.print(leiste[id-1].changed);
+	//debug.print("-");
+	//debug.print(leiste[id-1].avail);
+	//debug.print("-");
 	debug.print(arr);
 	//debug.print("-");
-	//for(int i=0;i<30;i++){
-	//	debug.print(answer[i]);
+	//for(int i=0;i<20;i++){
+	//	debug.print((char)debugStr[i]);
 	//}
-	debug.print("-");
-	debug.print(leiste[id-1].lastReq + UPDATE_EVERY);
-	debug.print("-");
-	debug.print(millis());
+	//debug.print("-");
+	//debug.print((char)debugChecksum,HEX);
+	//debug.print("-");
+	//debug.print(leiste[id-1].lastReq + UPDATE_EVERY);
+	//debug.print("-");
+	//debug.print(millis());
 	
 	debug.println();
+	//canbuf[0] = id+0x30;
+	//canbuf[1] = trys+0x30;
+	//canbuf[2] = debugStr[13]; // Leisten Status
+	//canbuf[3] = debugStr[14]; // Leisten Status
+	//canbuf[4] = debugStr[34]; //min Ampere
+	//canbuf[5] = debugStr[38]; //max Ampere
+	//canbuf[6] = "_";
+	//canbuf[7] = "_";
+	//can0.sendMsgBuf(buildAdr(TT_ANNOUNCE,ANNOUNCE_DEBUG1+id-1), 1, 8, canbuf);
 	#endif
 }
 
@@ -184,7 +208,7 @@ void Rittal::sendRittalAnnounce(uint8_t rid){
 	canbuf[5] = leiste[rid-1].d4;
 	canbuf[6] = leiste[rid-1].d5;
 	canbuf[7] = leiste[rid-1].d6;
-	can0.sendMsgBuf(buildAdr(TT_ANNOUNCE,SENSOR_RITTAL1+rid-1), 1, 8, canbuf);
+	can0.sendMsgBuf(buildAdr(TT_ANNOUNCE,ANNOUNCE_RITTAL1+rid-1), 1, 8, canbuf);
 }
 
 
@@ -247,8 +271,10 @@ void Rittal::task(){
 		case STATE_INIT_RETRY: 		// =========================================================================   4
 			trys++;
 			if(trys>=MAX_TRYS){
-				sendDebug("max Trys");
+				sendDebug("maxTry");
 				state = STATE_INIT_START;
+			}else{
+				state = STATE_INIT_REQ;
 			}
 			break;
 		case STATE_WAIT: 			// =========================================================================   10
@@ -281,7 +307,7 @@ void Rittal::task(){
 				leiste[id-1].changed = false;
 				leiste[id-1].error = CAN_ERROR_UPDATE;
 				state = STATE_WAIT;
-				sendDebug("Command failed");
+				sendDebug("CoFail");
 			}
 			break;
 		case STATE_RETRY_REQ: 		// =========================================================================    11
@@ -289,7 +315,7 @@ void Rittal::task(){
 			state = STATE_SEND_REQ;
 			if(trys >= MAX_TRYS){
 				state = STATE_WAIT;
-				sendDebug("Request failed");
+				sendDebug("ReFail");
 			}
 			break;
 		case STATE_SEND_REQ: 		// =========================================================================    21
@@ -313,7 +339,7 @@ void Rittal::task(){
 		case STATE_READ_COMMAND: 	// =========================================================================    31
 			loops++;
 			if(loops > WAIT_LOOPS || count >= ANSWER_LENGHT){
-				trys++;
+				//trys++;
 				retrySwitch(); // try again
 			}else{
 				if(Serial.available() > 0){
@@ -328,15 +354,15 @@ void Rittal::task(){
 								leiste[id-1].changed = false;
 								state = STATE_WAIT;
 								leiste[id-1].error = CAN_NO_ERROR;
-								sendDebug("Command success");
+								sendDebug("CoSucc");
 								sendRittalAnnounce(id);
 						}else if(answer[1] == 'i'){
 							if(answer[3]==id+0x30){
 								saveReqAnswer();
 								leiste[id-1].error = CAN_NO_ERROR;
 								state = STATE_WAIT; // auswerten
-								sendDebug("Reqest success");
-								sendRittalAnnounce(id);
+								sendDebug("ReSucc");
+								//sendRittalAnnounce(id);
 							}else{
 								retrySwitch();
 							}
@@ -386,7 +412,12 @@ void Rittal::reset(uint8_t id){
 	leiste[id].name[6] = 'A'+id;	
 	leiste[id].name[7] = 'A'+id;	
 	leiste[id].name[8] = 'A'+id;	
-	leiste[id].name[9] = 'A'+id;		
+	leiste[id].name[9] = 'A'+id;
+	//leiste[id].avail = false;	
+	//leiste[id].announce = 0; // if 1 then announce data via CAN
+	//leiste[id].error = CAN_NO_ERROR;
+	//leiste[id].error_count = 0;
+	//leiste[id].current = 0;
 }
 
 void Rittal::resetAll(){
