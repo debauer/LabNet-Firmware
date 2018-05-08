@@ -192,19 +192,19 @@ void SerPrint(const char str[]){
 						for(byte i = 0; i<4; i++){
 							for(byte j = 0; j<6; j++){
 								if(canRxBuf[0] == 0x00){
-									if((0x0F && rittal[i]) == 0x03 || (0x0F && rittal[i]) == 0x06 || (0x0F && rittal[i]) == 0x07 ){ // ON   AT LAB OFF - SAME AT LAB ON
+									if((0x0F && rittal[i].config) == 0x03 || (0x0F && rittal[i].config) == 0x06 || (0x0F && rittal[i].config) == 0x07 ){ // ON   AT LAB OFF - SAME AT LAB ON
 										rittal0.setSocket(i,j,true);
 									}
 									
-									if((0x0F && rittal[i]) == 0x04 || (0x0F && rittal[i]) == 0x05 || (0x0F && rittal[i]) == 0x08 ){ // ON   AT LAB OFF - SAME AT LAB ON
+									if((0x0F && rittal[i].config) == 0x04 || (0x0F && rittal[i].config) == 0x05 || (0x0F && rittal[i].config) == 0x08 ){ // ON   AT LAB OFF - SAME AT LAB ON
 										rittal0.setSocket(i,j,false);
 									}
 								}
 								if(canRxBuf[0] == 0x01){
-									if((0x0F && rittal[i]) == 0x03 || (0x0F && rittal[i]) == 0x05 || (0x0F && rittal[i]) == 0x07 ){ // ON   AT LAB OFF - SAME AT LAB ON
+									if((0x0F && rittal[i].config) == 0x03 || (0x0F && rittal[i].config) == 0x05 || (0x0F && rittal[i].config) == 0x07 ){ // ON   AT LAB OFF - SAME AT LAB ON
 										rittal0.setSocket(i,j,false);
 									}
-									if((0x0F && rittal[i]) == 0x01 || (0x0F && rittal[i]) == 0x06 || (0x0F && rittal[i]) == 0x08 ){ // ON   AT LAB OFF - SAME AT LAB ON
+									if((0x0F && rittal[i].config) == 0x01 || (0x0F && rittal[i].config) == 0x06 || (0x0F && rittal[i].config) == 0x08 ){ // ON   AT LAB OFF - SAME AT LAB ON
 										rittal0.setSocket(i,j,true);
 									}
 								}
@@ -231,7 +231,7 @@ void SerPrint(const char str[]){
 						// 1 = DEFAULT ON  AND NOT CHANGEABLE
 						// 2 = DEFAULT OFF AND 	   CHANGEABLE
 						// 3 = DEFAULT ON  AND 	   CHANGEABLE	
-						canRxBuf[i] = rittal[2+i];	
+						rittal[i].config = canRxBuf[i];	
 					}
 				}
 			#endif

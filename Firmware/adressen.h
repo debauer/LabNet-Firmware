@@ -15,7 +15,7 @@
 #define SENSOR_MASK         0x00000FFF
 
 // TT Telegram Type
-#define TT_EVENT_GlOBAL   	0x00
+#define TT_EVENT_GLOBAL   	0x00
 #define TT_EVENT_LOCAL    	0x01
 #define TT_REGISTER       	0x03
 #define TT_ANNOUNCE      	0x04
