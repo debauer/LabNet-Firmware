@@ -26,15 +26,21 @@
 
 // TT_EVENT_LOCAL & REG_MASK
 // 0x000000 -> 0x00000F for SYSTEM
-
+#define EVENT_GlOBAL_LABSTATE			0x000000 	// lab status from the lab switch
 
 // 0x000030 -> 0x00003F for RITTAL STRIPS
-#define EVENT_LOCAL_RESET   				0x000000
+#define EVENT_LOCAL_RESET   			0x000000
+#define EVENT_LOCAL_DEFAULTI			0x000011	
+#define EVENT_LOCAL_DEFAULTE			0x000012
 #define EVENT_LOCAL_RITTAL_CONFIG 		0x000030
 #define EVENT_LOCAL_RITTAL1 			0x000031	// set plugs and current
 #define EVENT_LOCAL_RITTAL2 			0x000032	// set plugs and current
 #define EVENT_LOCAL_RITTAL3 			0x000033	// set plugs and current
 #define EVENT_LOCAL_RITTAL4 			0x000034	// set plugs and current
+#define EVENT_LOCAL_RITTAL_CONFIG1 		0x000035	// set plugs and current
+#define EVENT_LOCAL_RITTAL_CONFIG2 		0x000036	// set plugs and current
+#define EVENT_LOCAL_RITTAL_CONFIG3 		0x000037	// set plugs and current
+#define EVENT_LOCAL_RITTAL_CONFIG4 		0x000038	// set plugs and current
 
 // TT_REGISTER & REG_MASK
 // 0x000000 -> 0x00000F for SYSTEM
@@ -52,8 +58,6 @@
 #define ANNOUNCE_STARTUP   			0x000001
 #define ANNOUNCE_PING				0x000002
 #define ANNOUNCE_RESET   			0x000010
-#define ANNOUNCE_DEFAULTI			0x000011	
-#define ANNOUNCE_DEFAULTE			0x000012
 
 // 0x000020 -> 0x00002F for single values
 #define ANNOUNCE_FUSES			0x000020

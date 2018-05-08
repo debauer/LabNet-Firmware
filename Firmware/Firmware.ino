@@ -167,7 +167,7 @@ void SerPrint(const char str[]){
 			#ifdef RITTAL_LEISTEN
 
 				// CAN RITTAL 1-4
-				if((canRxId & 0x1FFFFFFF) >= buildAdr(TT_EVENT_LOCAL,EVENT_LOCAL_RITTAL1) && (canRxId & 0x1FFFFFFF) <= buildAdr(TT_EVENT_LOCAL,ANNOUNCE_RITTAL4)){
+				if((canRxId & 0x1FFFFFFF) >= buildAdr(TT_EVENT_LOCAL,EVENT_LOCAL_RITTAL1) && (canRxId & 0x1FFFFFFF) <= buildAdr(TT_EVENT_LOCAL,EVENT_LOCAL_RITTAL4)){
 					for(byte i = 0; i<6; i++){
 						if(canRxBuf[2+i] != 0x02){
 							if(canRxBuf[2+i]==1){
@@ -179,8 +179,62 @@ void SerPrint(const char str[]){
 					}
 					//debug.println("setSocket");
 				}
-				if((canRxId & 0x1FFFFFFF) == buildAdr(TT_EVENT_LOCAL,EVENT_LOCAL_RITTAL1)){
-				
+				if((canRxId & 0x1FFFFFFF) == buildAdr(TT_EVENT_GLOBAL,EVENT_GlOBAL_LABSTATE)){
+					// EVENT_GlOBAL_LABSTATE
+					// first byte = status as uint8_T
+					// next 7 bytes ASCII for debug
+					// status byte
+					// 0x00 = LAB now Closed - event at the moment of turning switch off
+					// 0x01 = LAB now Opened - event at the moment of turning switch on
+					// 0x02 = LAB is Closed - event every x seconds for new nodes
+					// 0x03 = LAB is Opened - event every x seconds for new nodes
+					if(canRxBuf[0] <= 0x01){
+						for(byte i = 0; i<4; i++){
+							for(byte j = 0; j<6; j++){
+								if(canRxBuf[0] == 0x00){
+									if((0x0F && rittal[i]) == 0x03 || (0x0F && rittal[i]) == 0x06 || (0x0F && rittal[i]) == 0x07 ){ // ON   AT LAB OFF - SAME AT LAB ON
+										rittal0.setSocket(i,j,true);
+									}
+									
+									if((0x0F && rittal[i]) == 0x04 || (0x0F && rittal[i]) == 0x05 || (0x0F && rittal[i]) == 0x08 ){ // ON   AT LAB OFF - SAME AT LAB ON
+										rittal0.setSocket(i,j,false);
+									}
+								}
+								if(canRxBuf[0] == 0x01){
+									if((0x0F && rittal[i]) == 0x03 || (0x0F && rittal[i]) == 0x05 || (0x0F && rittal[i]) == 0x07 ){ // ON   AT LAB OFF - SAME AT LAB ON
+										rittal0.setSocket(i,j,false);
+									}
+									if((0x0F && rittal[i]) == 0x01 || (0x0F && rittal[i]) == 0x06 || (0x0F && rittal[i]) == 0x08 ){ // ON   AT LAB OFF - SAME AT LAB ON
+										rittal0.setSocket(i,j,true);
+									}
+								}
+							}
+						}
+					}
+				}
+				// CAN RITTAL CONFIG 1-4
+				if((canRxId & 0x1FFFFFFF) >= buildAdr(TT_EVENT_LOCAL,EVENT_LOCAL_RITTAL_CONFIG1) && (canRxId & 0x1FFFFFFF) <= buildAdr(TT_EVENT_LOCAL,EVENT_LOCAL_RITTAL_CONFIG4)){
+					for(byte i = 0; i<6; i++){
+						// low nibble is for labstatus changed
+						// 0 = SAME AT LAB OFF - SAME AT LAB ON
+						// 1 = SAME AT LAB OFF - ON   AT LAB ON
+						// 2 = SAME AT LAB OFF - OFF  AT LAB ON
+						// 3 = ON   AT LAB OFF - SAME AT LAB ON
+						// 4 = OFF  AT LAB OFF - SAME AT LAB ON
+						// 5 = OFF  AT LAB OFF - OFF  AT LAB ON
+						// 6 = ON   AT LAB OFF - ON   AT LAB ON
+						// 7 = ON 	AT LAB OFF - OFF  AT LAB ON
+						// 8 = OFF 	AT LAB OFF - ON   AT LAB ON
+
+						// high nibble is for default
+						// 0 = DEFAULT OFF AND NOT CHANGEABLE
+						// 1 = DEFAULT ON  AND NOT CHANGEABLE
+						// 2 = DEFAULT OFF AND 	   CHANGEABLE
+						// 3 = DEFAULT ON  AND 	   CHANGEABLE	
+						canRxBuf[i] = rittal[2+i];	
+					}
+				}
+			#endif
 				// TT_EEPROM_WR
 				if((canRxId & 0x1FFFFFFF) >= buildAdr(TT_EEPROM_WR,0x00000) && (canRxId & 0x1FFFFFFF) <= buildAdr(TT_EEPROM_WR,0xFFFFFF) ){
 					for(int i =0; i<canLen;i++){
@@ -195,16 +249,15 @@ void SerPrint(const char str[]){
 					}
 					can0.sendMsgBuf(buildAdr(TT_EEPROM_REPLY,canRxId & 0xFFFFFF), 1, canLen, buf);
 				}
-			#endif
-			//sprintf(canMsgString, "Extended ID: 0x%.8lX  DLC: %1d  Data:", (canRxId & 0x1FFFFFFF), canLen);
-			//debug.print(canMsgString);
-			//for(byte i = 0; i<canLen; i++){
-			//	sprintf(canMsgString, " 0x%.2X", canRxBuf[i]);
-			//	debug.print(canMsgString);
-			//}
+			
+					//sprintf(canMsgString, "Extended ID: 0x%.8lX  DLC: %1d  Data:", (canRxId & 0x1FFFFFFF), canLen);
+					//debug.print(canMsgString);
+					//for(byte i = 0; i<canLen; i++){
+					//	sprintf(canMsgString, " 0x%.2X", canRxBuf[i]);
+					//	debug.print(canMsgString);
+					//}
 		}
 	}
-}
 
 	uint8_t floatToBuf(float t){
 		if(t != 99999.9){

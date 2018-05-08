@@ -21,6 +21,7 @@ struct rittal_s{
 		uint8_t error;
 		unsigned long error_count;
 		uint16_t current;
+		uint8_t config; // byte from EVENT_LOCAL_RITTAL_CONFIG$
 };
 
 struct can_message_s{
