@@ -192,19 +192,19 @@ void SerPrint(const char str[]){
 						for(byte i = 0; i<4; i++){
 							for(byte j = 0; j<6; j++){
 								if(canRxBuf[0] == 0x00){
-									if((0x0F && rittal[i].config) == 0x03 || (0x0F && rittal[i].config) == 0x06 || (0x0F && rittal[i].config) == 0x07 ){ // ON   AT LAB OFF - SAME AT LAB ON
+									if((0x0F && rittal[i].config[j]) == 0x03 || (0x0F && rittal[i].config[j]) == 0x06 || (0x0F && rittal[i].config[j]) == 0x07 ){ // ON   AT LAB OFF - SAME AT LAB ON
 										rittal0.setSocket(i,j,true);
 									}
 									
-									if((0x0F && rittal[i].config) == 0x04 || (0x0F && rittal[i].config) == 0x05 || (0x0F && rittal[i].config) == 0x08 ){ // ON   AT LAB OFF - SAME AT LAB ON
+									if((0x0F && rittal[i].config[j]) == 0x04 || (0x0F && rittal[i].config[j]) == 0x05 || (0x0F && rittal[i].config[j]) == 0x08 ){ // ON   AT LAB OFF - SAME AT LAB ON
 										rittal0.setSocket(i,j,false);
 									}
 								}
 								if(canRxBuf[0] == 0x01){
-									if((0x0F && rittal[i].config) == 0x03 || (0x0F && rittal[i].config) == 0x05 || (0x0F && rittal[i].config) == 0x07 ){ // ON   AT LAB OFF - SAME AT LAB ON
+									if((0x0F && rittal[i].config[j]) == 0x03 || (0x0F && rittal[i].config[j]) == 0x05 || (0x0F && rittal[i].config[j]) == 0x07 ){ // ON   AT LAB OFF - SAME AT LAB ON
 										rittal0.setSocket(i,j,false);
 									}
-									if((0x0F && rittal[i].config) == 0x01 || (0x0F && rittal[i].config) == 0x06 || (0x0F && rittal[i].config) == 0x08 ){ // ON   AT LAB OFF - SAME AT LAB ON
+									if((0x0F && rittal[i].config[j]) == 0x01 || (0x0F && rittal[i].config[j]) == 0x06 || (0x0F && rittal[i].config[j]) == 0x08 ){ // ON   AT LAB OFF - SAME AT LAB ON
 										rittal0.setSocket(i,j,true);
 									}
 								}
@@ -230,8 +230,8 @@ void SerPrint(const char str[]){
 						// 0 = DEFAULT OFF AND NOT CHANGEABLE
 						// 1 = DEFAULT ON  AND NOT CHANGEABLE
 						// 2 = DEFAULT OFF AND 	   CHANGEABLE
-						// 3 = DEFAULT ON  AND 	   CHANGEABLE	
-						rittal[i].config = canRxBuf[i];	
+						// 3 = DEFAULT ON  AND 	   CHANGEABLE
+						rittal[(canRxId & 0x1FFFFFFF) - buildAdr(TT_EVENT_LOCAL,EVENT_LOCAL_RITTAL_CONFIG1-1)].config[i] = canRxBuf[i];	
 					}
 				}
 			#endif

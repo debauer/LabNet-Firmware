@@ -21,5 +21,5 @@
 
 #define RS485_RE A1 // auf den basis nodes 1.0 ist es auf pin 9 verdrahtet... muss umverdrahtet werden.
 
-#define SOFTSERIAL_TX A0
+#define SOFTSERIAL_TX A0 
 #define SOFTSERIAL_RX 0 // there is no pin 0

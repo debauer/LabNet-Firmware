@@ -306,6 +306,7 @@ void Rittal::task(){
 			if(trys >= MAX_TRYS){
 				leiste[id-1].changed = false;
 				leiste[id-1].error = CAN_ERROR_UPDATE;
+				leiste[id-1].error_count++;
 				state = STATE_WAIT;
 				sendDebug("CoFail");
 			}
@@ -413,11 +414,7 @@ void Rittal::reset(uint8_t id){
 	leiste[id].name[7] = 'A'+id;	
 	leiste[id].name[8] = 'A'+id;	
 	leiste[id].name[9] = 'A'+id;
-	//leiste[id].avail = false;	
-	//leiste[id].announce = 0; // if 1 then announce data via CAN
-	//leiste[id].error = CAN_NO_ERROR;
-	//leiste[id].error_count = 0;
-	//leiste[id].current = 0;
+	leiste[id].error_count = 0;
 }
 
 void Rittal::resetAll(){
@@ -459,6 +456,7 @@ void Rittal::setMin(uint8_t id, uint8_t value){
 	leiste[id-1].changed = true;
 }
 
+/* unused 
 void Rittal::setAvail(uint8_t id, uint8_t value){
 	if(leiste[id-1].avail != value){
 		leiste[id-1].avail = value;
@@ -471,4 +469,4 @@ void Rittal::setAvail(uint8_t id, uint8_t value){
 			leiste[id-1].d6 = 0;  // Dose 6
 		}
 	}
-}
+} */
