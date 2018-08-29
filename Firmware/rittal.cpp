@@ -59,14 +59,14 @@ Rittal::Rittal(){
 
 void Rittal::sendReq(uint8_t id){
 	// I0148
-	digitalWrite(RS485_RE,1);
+	digitalWrite(RS485_RE,1); // 1
 	Serial.write(0x02);
 	Serial.write("I0");
 	Serial.write(0x30+id);
 	Serial.write("48");
 	Serial.write(0x03);
 	Serial.flush();
-	digitalWrite(RS485_RE,0);
+	digitalWrite(RS485_RE,0); // 0 0
 }
 
 uint8_t debugStr [40];
@@ -134,9 +134,12 @@ void Rittal::sendData(rittal_s r){
 void Rittal::saveReqAnswer(){
 	// i01N15AAAAAAAAAA00F3010000010100000F000020
 	// i01N15ActivePSM 01D7010000010100000F000065
-	for(int j=0;j<10;j++){
-		leiste[id-1].name[j] = answer[7+j];
-	}
+	//for(int j=0;j<10;j++){
+	//	if(answer[7+j] == 0x00){
+	//		break
+	//	}
+	//	leiste[id-1].name[j] = answer[7+j];
+	//}
 	/*leiste[id-1].d1 = answer[32] & 0x01;
 	leiste[id-1].d2 = answer[32] & 0x02 >> 1;
 	leiste[id-1].d3 = answer[32] & 0x04 >> 2;
@@ -160,20 +163,27 @@ void Rittal::retrySwitch(){
 
 void Rittal::sendDebug(char arr[]){
 	#ifdef SERIAL_DEBUG
-	//debug.print(state);
+	debug.print(state);
+	debug.print("-");
+	debug.print(answer[0]);
+	debug.print(answer[1]);
+	debug.print(answer[2]);
+	debug.print(answer[3]);
+	debug.print(answer[4]);
+	debug.print(answer[5]);
 	//debug.print("-");
 	//debug.print(id);
 	//debug.print("-");
 	//debug.print(trys);
-	//debug.print("-");
-	//debug.print(loops);
+	debug.print("-");
+	debug.print(loops);
 	//debug.print("-");
 	//debug.print(count);
 	//debug.print("-");
 	//debug.print(leiste[id-1].changed);
 	//debug.print("-");
 	//debug.print(leiste[id-1].avail);
-	//debug.print("-");
+	debug.print("-");
 	debug.print(arr);
 	//debug.print("-");
 	//for(int i=0;i<20;i++){
@@ -208,6 +218,17 @@ void Rittal::sendRittalAnnounce(uint8_t rid){
 	canbuf[5] = leiste[rid-1].d4;
 	canbuf[6] = leiste[rid-1].d5;
 	canbuf[7] = leiste[rid-1].d6;
+	//debug.print(canbuf[0]);
+	//debug.print(canbuf[1]);
+	//debug.print(canbuf[2]);
+	//debug.print(canbuf[3]);
+	//debug.print(canbuf[4]);
+	//debug.print(canbuf[5]);
+	//debug.print(canbuf[6]);
+	//debug.print(canbuf[7]);
+	//debug.print("-");
+	//debug.print(buildAdr(TT_ANNOUNCE,ANNOUNCE_RITTAL1+rid-1));
+	//debug.println();
 	can0.sendMsgBuf(buildAdr(TT_ANNOUNCE,ANNOUNCE_RITTAL1+rid-1), 1, 8, canbuf);
 }
 
@@ -242,13 +263,17 @@ void Rittal::task(){
 			break;
 		case STATE_INIT_READ: 		// =========================================================================   3
 			if(Serial.available() > 0){
+				//sendDebug("Serial.available() > 0");
 				loops=0; // loops zurücksetzen damit jedes zeichen WAIT_LOOPS zeit hat. 
 				answer[count] = Serial.read();
+				sendDebug(answer[count]);
 				if(answer[0] != 0x02){
+					//sendDebug("answer[0] != 0x02");
 					//state = STATE_INIT_RETRY; // try again
 					count=0;
 				}
 				if(answer[count] == 0x03){ // 0x03 == endbyte
+					//sendDebug("answer[count] == 0x03");
 					if(answer[3]==id+0x30){
 						saveReqAnswer();
 						state = STATE_INIT_START; // auswerten
@@ -259,11 +284,13 @@ void Rittal::task(){
 				}
 				count++; // zählt die empfangenen Zeichen
 				if(count >= ANSWER_LENGHT){
+					//sendDebug("count >= ANSWER_LENGHT");
 					state = STATE_INIT_RETRY; // auswerten
 				}
 			}else{
 				loops++;
 				if(loops>WAIT_LOOPS){
+					//sendDebug("loops>WAIT_LOOPS");
 					state=STATE_INIT_RETRY;
 				}
 			}
@@ -271,7 +298,7 @@ void Rittal::task(){
 		case STATE_INIT_RETRY: 		// =========================================================================   4
 			trys++;
 			if(trys>=MAX_TRYS){
-				sendDebug("maxTry");
+				//sendDebug("maxTry");
 				state = STATE_INIT_START;
 			}else{
 				state = STATE_INIT_REQ;
@@ -316,7 +343,7 @@ void Rittal::task(){
 			state = STATE_SEND_REQ;
 			if(trys >= MAX_TRYS){
 				state = STATE_WAIT;
-				sendDebug("ReFail");
+				//sendDebug("ReFail");
 			}
 			break;
 		case STATE_SEND_REQ: 		// =========================================================================    21
@@ -339,18 +366,28 @@ void Rittal::task(){
 		case STATE_READ_REQ: 		// =========================================================================    30
 		case STATE_READ_COMMAND: 	// =========================================================================    31
 			loops++;
+			sendDebug("case STATE_READ_COMMAND:");
 			if(loops > WAIT_LOOPS || count >= ANSWER_LENGHT){
 				//trys++;
+				if(loops > WAIT_LOOPS){
+					//sendDebug("loops > WAIT_LOOPS");
+				}
+				if(count >= ANSWER_LENGHT){
+					//sendDebug("count >= ANSWER_LENGHT");
+				}
 				retrySwitch(); // try again
 			}else{
 				if(Serial.available() > 0){
+					//sendDebug("Serial.available() > 0");
 					loops=0; // loops zurücksetzen damit jedes zeichen WAIT_LOOPS zeit hat. 
 					answer[count] = Serial.read();
 					if(answer[0] != 0x02){
+						//sendDebug("first byte not 0x02");
 						//state = STATE_INIT_RETRY; // try again
 						count=0;
 					}
 					if(answer[count] == 0x03){ // 0x03 == endbyte
+						//sendDebug("answer[count] == 0x03");
 						if(answer[1] == 'j'){
 								leiste[id-1].changed = false;
 								state = STATE_WAIT;
@@ -362,7 +399,7 @@ void Rittal::task(){
 								saveReqAnswer();
 								leiste[id-1].error = CAN_NO_ERROR;
 								state = STATE_WAIT; // auswerten
-								sendDebug("ReSucc");
+								//sendDebug("ReSucc");
 								//sendRittalAnnounce(id);
 							}else{
 								retrySwitch();
@@ -373,13 +410,15 @@ void Rittal::task(){
 					}
 					count++; // zählt die empfangenen Zeichen
 					if(count >= ANSWER_LENGHT){
+						//sendDebug("count >= ANSWER_LENGHT");
 						retrySwitch(); // auswerten
 					}
 					if(answer[0] != 0x02){
+						//sendDebug("count >= ANSWER_LENGHT");
 						retrySwitch();
 					}
 				}else{
-					loops++;
+					//loops++;
 					if(loops>WAIT_LOOPS){
 						retrySwitch();
 					}

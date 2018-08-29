@@ -27,6 +27,7 @@
 // TT_EVENT_LOCAL & REG_MASK
 // 0x000000 -> 0x00000F for SYSTEM
 #define EVENT_GlOBAL_LABSTATE			0x000000 	// lab status from the lab switch
+#define EVENT_GlOBAL_RITTAL_UPDATE		0x000001 	// one of the nodes wants all rittal plug states
 
 // 0x000030 -> 0x00003F for RITTAL STRIPS
 #define EVENT_LOCAL_RESET   			0x000000

@@ -165,7 +165,6 @@ void SerPrint(const char str[]){
 		if(can0.checkReceive() == CAN_MSGAVAIL){
 			can0.readMsgBuf(&canRxId, &canLen, canRxBuf);
 			#ifdef RITTAL_LEISTEN
-
 				// CAN RITTAL 1-4
 				if((canRxId & 0x1FFFFFFF) >= buildAdr(TT_EVENT_LOCAL,EVENT_LOCAL_RITTAL1) && (canRxId & 0x1FFFFFFF) <= buildAdr(TT_EVENT_LOCAL,EVENT_LOCAL_RITTAL4)){
 					for(byte i = 0; i<6; i++){
@@ -179,6 +178,12 @@ void SerPrint(const char str[]){
 					}
 					//debug.println("setSocket");
 				}
+				if((canRxId & 0x1FFFFFFF) == buildAdr(TT_EVENT_GLOBAL,EVENT_GlOBAL_RITTAL_UPDATE)){
+					rittal0.sendRittalAnnounce(1);
+					rittal0.sendRittalAnnounce(2);
+					rittal0.sendRittalAnnounce(3);
+					rittal0.sendRittalAnnounce(4);
+				}
 				if((canRxId & 0x1FFFFFFF) == buildAdr(TT_EVENT_GLOBAL,EVENT_GlOBAL_LABSTATE)){
 					// EVENT_GlOBAL_LABSTATE
 					// first byte = status as uint8_T
@@ -189,9 +194,9 @@ void SerPrint(const char str[]){
 					// 0x02 = LAB is Closed - event every x seconds for new nodes
 					// 0x03 = LAB is Opened - event every x seconds for new nodes
 					if(canRxBuf[0] <= 0x01){
-						for(byte i = 0; i<4; i++){
-							for(byte j = 0; j<6; j++){
-								if(canRxBuf[0] == 0x00){
+						for(byte i = 0; i<4; i++){ // 4 strips
+							for(byte j = 0; j<6; j++){ // 6 plugs per strip
+								if(canRxBuf[0] == 0x00){ // LAB now closed
 									if((0x0F && rittal[i].config[j]) == 0x03 || (0x0F && rittal[i].config[j]) == 0x06 || (0x0F && rittal[i].config[j]) == 0x07 ){ // ON   AT LAB OFF - SAME AT LAB ON
 										rittal0.setSocket(i,j,true);
 									}
@@ -200,7 +205,7 @@ void SerPrint(const char str[]){
 										rittal0.setSocket(i,j,false);
 									}
 								}
-								if(canRxBuf[0] == 0x01){
+								if(canRxBuf[0] == 0x01){ // LAB now open
 									if((0x0F && rittal[i].config[j]) == 0x03 || (0x0F && rittal[i].config[j]) == 0x05 || (0x0F && rittal[i].config[j]) == 0x07 ){ // ON   AT LAB OFF - SAME AT LAB ON
 										rittal0.setSocket(i,j,false);
 									}
@@ -284,7 +289,9 @@ void SerPrint(const char str[]){
 	}
 
 	void canSensors(){
-		can0.sendMsgBuf(buildAdr(TT_ANNOUNCE,ANNOUNCE_FUSES), 1, 8, fuseStatus);
+		#if HW == POWER_HUB
+			can0.sendMsgBuf(buildAdr(TT_ANNOUNCE,ANNOUNCE_FUSES), 1, 8, fuseStatus);
+		#endif
 		/*for(int i=0;i<16;i++){
 			if(floatToBuf(temperatur[i]))can0.sendMsgBuf(buildAdr(TT_ANNOUNCE,ANNOUNCE_TEMPERATUR1+i), 1, 8, buf);
 			if(floatToBuf(voltages[i]))can0.sendMsgBuf(buildAdr(TT_ANNOUNCE,ANNOUNCE_VOLTAGE1+i), 1, 8, buf);
@@ -329,9 +336,9 @@ void SerPrint(const char str[]){
   void rittalTask(){
 	rittal0.task();
   }
-
-  
 #endif
+
+
 
 
 #ifdef ADDON_LCD_LED

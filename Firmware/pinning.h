@@ -19,7 +19,9 @@
 #define TFT_CS 8
 #define TFT_RS 14 // A0
 
+
 #define RS485_RE A1 // auf den basis nodes 1.0 ist es auf pin 9 verdrahtet... muss umverdrahtet werden.
+//#define RS485_RE 9
 
 #define SOFTSERIAL_TX A0 
 #define SOFTSERIAL_RX 0 // there is no pin 0

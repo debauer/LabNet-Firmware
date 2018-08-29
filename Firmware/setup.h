@@ -7,7 +7,7 @@
 #define MCP23S17_STATUS_ADR 0
 
 // AB HIER ÄNDERN
-#define HWID 0x01  		// NODEID besteht aus HW + HWID // max 0xFF
+#define HWID 0x04		// NODEID besteht aus HW + HWID // max 0xFF
 #define HW POWER_HUB
 
 // uncomment if not needed
@@ -25,4 +25,5 @@
 	// #define ADDON_MOTOR
 	// #define ADDON_RGBW
 	// define ADDON_XYZ
+ 	#define FUNKTION_LAB_STATUS
 #endif
